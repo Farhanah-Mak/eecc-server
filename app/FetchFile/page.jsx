@@ -8,32 +8,55 @@ import "./FetchFile.css"
 
 
 export default function FetchFile() {
-  const { data: session } = useSession(); // Use session hook from NextAuth.js
+  const { data: session, status } = useSession(); // Use session hook from NextAuth.js
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState("");
+ // console.log("This is the status", status);
+  const department = session?.user?.department;
 
   useEffect(() => {
-    const fetchFiles = async () => {
-      const response = await fetch("/api/ListFiles");
-      const fileList = await response.json();  
-      // console.log(fileList);
-      if (Array.isArray(fileList)) {
-        setFiles(fileList);
-      } else {
-        console.error("File list is not an array:", fileList);
-      }
-    };
+    // Only fetch data when the session is authenticated and session data is available
+    if (status === "authenticated") {
+      const fetchFiles = async () => {
+        try {
+          const response = await fetch("/api/ListFiles", {
+            method: "GET",
+          });
 
-    fetchFiles();
-    console.log(session);
-  }, []);
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+
+          const fileList = await response.json();
+         // console.log(fileList);
+          if (Array.isArray(fileList)) {
+            setFiles(fileList);
+            
+          } else {
+            console.error("File list is not an array:", fileList);
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
+
+      fetchFiles();
+    }
+  }, [session]);
+
+
+
 
   const handleFetchFile = async () => {
-    if (!selectedFile) return; 
-      window.location.href = `/api/getFile?file=${encodeURIComponent(
-        selectedFile
-      )}`;
-    
+    if (!selectedFile) return;
+    const plevel = selectedFile.split("/")[0];
+    const fileName = selectedFile.split("/")[1];
+   // console.log(plevel);
+    window.location.href = `/api/getFile?department=${encodeURIComponent(
+      department
+    )}&plevel=${encodeURIComponent(plevel)}&file=${encodeURIComponent(
+      fileName
+    )}`;
   };
 
   return (
@@ -48,7 +71,7 @@ export default function FetchFile() {
         <option value="" className="dropdown_box">Select a file</option>
         {files.map((file) => (
           <option key={file} value={file}>
-            {file}
+            {file.split('/')[1]}
           </option>
         ))}``
       </select>
@@ -56,12 +79,11 @@ export default function FetchFile() {
           <button
             className="download_btn"
             onClick={handleFetchFile}
-            // disabled={session.user.role !== "admin"} // Disable button if not admin
           >
             Download File
           </button>
         <button
-          onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+          onClick={() => signOut({ redirect: true ,callbackUrl: `${window.location.origin}/auth/signin` })}
           className="signout_btn"
         >
           Sign Out
@@ -79,3 +101,12 @@ export default function FetchFile() {
 //`file=${encodeURIComponent(selectedFile)}`: This part appends a query parameter named `file` to the URL. The `encodeURIComponent` function is used to encode the `selectedFile` variable, ensuring that any special characters in the filename (such as spaces or special symbols) are properly encoded for inclusion in a URL.
 
 
+/*  const url =`/api/getFile?department=${encodeURIComponent(
+      department
+    )}&plevel=${encodeURIComponent(plevel)}&file=${encodeURIComponent(
+      fileName
+       )}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();  */

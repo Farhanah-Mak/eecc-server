@@ -18,20 +18,18 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-        console.log("Recieved Credentials");
-        console.log(credentials);
-        console.log(req);
+       
         // Ensure the credentials object is not null or undefined
         if (!credentials) return null;
 
-        console.log("fetching the user");
-        console.log(credentials.username);
+       // console.log("fetching the user");
+       // console.log(credentials.username);
         //fetch the user from database
-        const user = await prisma.user.findFirst({ where: { name: credentials.username } });
-        console.log("Done fetching ", user);
+        const user = await prisma.user.findUnique({ where: { name: credentials.username } });
+       // console.log("Done fetching ", user);
         if (user && user.password === credentials.password)
           return user;
-          console.log("fetched the user from db");
+        
         return null; //if no user is found or passwords do not  match
 
       },
@@ -45,6 +43,8 @@ export const authOptions = {
       if (user) {  //if the user object exist, add its info to the token
         token.id = user.id;
         token.name = user.name
+        token.department = user.department;
+        token.plevel = user.plevel;
       }
       return token;
     },
@@ -52,6 +52,8 @@ export const authOptions = {
       if (token) {    //attach user information to the session
         session.user.id = token.id;
         session.user.name = token.name;
+        session.user.department = token.department
+        session.user.plevel = token.plevel
       }
       return session;
     },
@@ -121,21 +123,4 @@ Environment Variables: Ensure `NEXTAUTH_SECRET` and any other sensitive informat
 
 - Rate Limiting: To prevent brute force attacks, consider implementing rate limiting on the authentication endpoint.
 
-Here's a sample of what a more secure `authorize` function might look like using a hypothetical database query:
-
-async authorize(credentials) {
-  if (!credentials) return null;
-
-  // Hypothetical database call to find a user
-  const user = await database.users.findUnique({
-    where: { username: credentials.username },
-  });
-
-  if (user && bcrypt.compareSync(credentials.password, user.passwordHash)) {
-    // Return user data without sensitive info
-    return { id: user.id, name: user.name, role: user.role };
-  }
-
-  return null;
-}
 */
