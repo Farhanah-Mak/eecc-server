@@ -5,9 +5,11 @@
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import "./FetchFile.css"
+import { useRouter } from "next/navigation";
 
 
 export default function FetchFile() {
+  const router = useRouter();
   const { data: session, status } = useSession(); // Use session hook from NextAuth.js
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState("");
@@ -59,31 +61,43 @@ export default function FetchFile() {
     )}`;
   };
 
+  const handleSignOut = async () => {
+    const data = await signOut({
+      redirect: true,
+      callbackUrl: process.env.NEXTAUTH_URL
+        ? `${process.env.NEXTAUTH_URL}`
+        : "/",
+    });
+    router.push(data.url);
+  }
+
   return (
     <div className="filefetcher_container">
       <h1 className="filefetcher_title">File Fetcher</h1>
-      <p className="filefetcher_text">You are logged in as { session?.user?.name }</p>
+      <p className="filefetcher_text">
+        You are logged in as {session?.user?.name}
+      </p>
       <select
         value={selectedFile}
         onChange={(e) => setSelectedFile(e.target.value)}
         className="dropdown"
       >
-        <option value="" className="dropdown_box">Select a file</option>
+        <option value="" className="dropdown_box">
+          Select a file
+        </option>
         {files.map((file) => (
           <option key={file} value={file}>
-            {file.split('/')[1]}
+            {file.split("/")[1]}
           </option>
-        ))}``
+        ))}
+        ``
       </select>
       <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
-          <button
-            className="download_btn"
-            onClick={handleFetchFile}
-          >
-            Download File
-          </button>
+        <button className="download_btn" onClick={handleFetchFile}>
+          Download File
+        </button>
         <button
-          onClick={() => signOut({ redirect: true ,callbackUrl: `${window.location.origin}/auth/signin` })}
+          onClick={handleSignOut} 
           className="signout_btn"
         >
           Sign Out
@@ -110,3 +124,10 @@ export default function FetchFile() {
     link.href = url;
     link.download = fileName;
     link.click();  */
+
+
+
+  
+
+  
+  

@@ -18,42 +18,50 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
-       
         // Ensure the credentials object is not null or undefined
         if (!credentials) return null;
 
-       // console.log("fetching the user");
-       // console.log(credentials.username);
+        // console.log("fetching the user");
+        // console.log(credentials.username);
         //fetch the user from database
-        const user = await prisma.user.findUnique({ where: { name: credentials.username } });
-       // console.log("Done fetching ", user);
-        if (user && user.password === credentials.password)
-          return user;
-        
-        return null; //if no user is found or passwords do not  match
+        const user = await prisma.user.findUnique({
+          where: { name: credentials.username },
+        });
+        // console.log("Done fetching ", user);
+        if (user && user.password === credentials.password) return user;
 
+        return null; //if no user is found or passwords do not  match
       },
     }),
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
     async jwt({ token, user }) {
-      if (user) {  //if the user object exist, add its info to the token
+      if (user) {
+        //if the user object exist, add its info to the token
         token.id = user.id;
-        token.name = user.name
+        token.name = user.name;
         token.department = user.department;
         token.plevel = user.plevel;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {    //attach user information to the session
+      if (token) {
+        //attach user information to the session
         session.user.id = token.id;
         session.user.name = token.name;
-        session.user.department = token.department
-        session.user.plevel = token.plevel
+        session.user.department = token.department;
+        session.user.plevel = token.plevel;
       }
       return session;
     },
@@ -61,16 +69,13 @@ export const authOptions = {
       signIn: "/auth/signin", // Path to your custom sign-in page
     },
     secret: process.env.NEXTAUTH_SECRET, // Ensure this is set in your environment variables
-  }
-}
+  },
+};
 // Create a Next.js route handler for NextAuth
 const handler = NextAuth(authOptions);
 
 // Export HTTP method handlers for Next.js App Router
 export { handler as GET , handler as POST};
-
-
-
 
 
 
