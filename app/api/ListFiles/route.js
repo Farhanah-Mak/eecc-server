@@ -7,8 +7,24 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(res, req) {
+  // Set CORS headers
+  const corsHeaders = {
+"Access-Control-Allow-Origin": "http://localhost:3000/", // Replace with your actual frontend URL
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+ "Access-Control-Allow-Credentials": "true"
+  }
+
+  // Handle preflight OPTIONS request
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  
   const session = await getServerSession(authOptions);
+  if (!session || !session.user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401, headers:corsHeaders });
+  }
   console.log(session.user.name);
   const directoryPath = process.env.DIRECTORY_PATH;
   const { department, plevel } = await prisma.user.findUnique({
@@ -53,11 +69,24 @@ export async function GET() {
         console.error(`Error reading files from folder ${folderPath}:`, err);
       }
     }
-    return NextResponse.json(visibleFiles);
-    console.log("Visible files the user can access:", visibleFiles);
+    return NextResponse.json(visibleFiles, {headers: corsHeaders});
   } catch (error) {
     console.error("Error processing accessible folders:", error);
+    return NextResponse.json({error: 'Failed'}, { status: 500, headers: corsHeaders});
   }
 }
 
 
+
+
+
+
+
+
+
+
+
+    
+  
+
+ 

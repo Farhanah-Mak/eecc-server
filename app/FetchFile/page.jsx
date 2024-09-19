@@ -1,20 +1,19 @@
-
-"use client";
-
+"use client"
 
 import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import "./FetchFile.css"
-import { useRouter } from "next/navigation";
-
+import Download from "@/components/Download";
+import SignOut from "@/components/SignOut";
 
 export default function FetchFile() {
-  const router = useRouter();
   const { data: session, status } = useSession(); // Use session hook from NextAuth.js
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState("");
- // console.log("This is the status", status);
+  // console.log("This is the status", status);
   const department = session?.user?.department;
+  console.log(department);
+
 
   useEffect(() => {
     // Only fetch data when the session is authenticated and session data is available
@@ -30,7 +29,7 @@ export default function FetchFile() {
           }
 
           const fileList = await response.json();
-         // console.log(fileList);
+           console.log("response",fileList);
           if (Array.isArray(fileList)) {
             setFiles(fileList);
             
@@ -46,63 +45,35 @@ export default function FetchFile() {
     }
   }, [session]);
 
-
-
-
-  const handleFetchFile = async () => {
-    if (!selectedFile) return;
-    const plevel = selectedFile.split("/")[0];
-    const fileName = selectedFile.split("/")[1];
-   // console.log(plevel);
-    window.location.href = `/api/getFile?department=${encodeURIComponent(
-      department
-    )}&plevel=${encodeURIComponent(plevel)}&file=${encodeURIComponent(
-      fileName
-    )}`;
-  };
-
-  const handleSignOut = async () => {
-    const data = await signOut({
-      redirect: true,
-      callbackUrl: process.env.NEXTAUTH_URL
-        ? `${process.env.NEXTAUTH_URL}`
-        : "/",
-    });
-    router.push(data.url);
-  }
-
   return (
     <div className="filefetcher_container">
       <h1 className="filefetcher_title">File Fetcher</h1>
-      <p className="filefetcher_text">
-        You are logged in as {session?.user?.name}
-      </p>
-      <select
-        value={selectedFile}
-        onChange={(e) => setSelectedFile(e.target.value)}
-        className="dropdown"
-      >
-        <option value="" className="dropdown_box">
-          Select a file
-        </option>
-        {files.map((file) => (
-          <option key={file} value={file}>
-            {file.split("/")[1]}
-          </option>
-        ))}
-        ``
-      </select>
-      <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
-        <button className="download_btn" onClick={handleFetchFile}>
-          Download File
-        </button>
-        <button
-          onClick={handleSignOut} 
-          className="signout_btn"
-        >
-          Sign Out
-        </button>
-      </div>
+      {status === "authenticated" ? (
+        <>
+          <p className="filefetcher_text">
+            You are logged in as {session?.user?.name}
+          </p>
+          <select
+            value={selectedFile}
+            onChange={(e) => setSelectedFile(e.target.value)}
+            className="dropdown"
+          >
+            <option value="" className="dropdown_box">
+              Select a file
+            </option>
+            {files.map((file) => (
+              <option key={file.index} value={file} id="filename">
+                {file.split("/")[1]}
+              </option>
+            ))}
+            ``
+          </select>
+          <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+            <Download selectedFile={selectedFile} department={department} />
+           < SignOut />
+          </div>
+        </>) : (<p>Loading....</p>)
+      }
     </div>
   );
 }
